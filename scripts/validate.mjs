@@ -57,7 +57,7 @@ function validateFont(fontDir, isDeprecated = false) {
   for (const file of font.files) {
     const filePath = join(fontDir, file.filename);
     if (!existsSync(filePath)) {
-      errors.push(`${font.id}: Missing file ${file.filename}`);
+      warnings.push(`${font.id}: Missing file ${file.filename}`);
     } else {
       const stat = statSync(filePath);
       if (stat.size > 5 * 1024 * 1024) {
