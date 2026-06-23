@@ -1,0 +1,37 @@
+{
+  "$schema": "../../../font.schema.json",
+  "id": "sarasa-mono-sc",
+  "name": "Sarasa Mono SC",
+  "nameLocal": "更纱等距黑体 SC",
+  "description": "A monospace CJK font with simplified Chinese support, part of the Sarasa Gothic superfamily",
+  "category": "monospace",
+  "version": "1.0.39",
+  "license": {
+    "spdx": "OFL-1.1",
+    "url": "https://github.com/be5invis/Sarasa-Gothic/blob/main/LICENSE"
+  },
+  "source": {
+    "url": "https://github.com/be5invis/Sarasa-Gothic",
+    "type": "github"
+  },
+  "fetch": {
+    "script": "fetch.sh",
+    "upstreamRepo": "be5invis/Sarasa-Gothic",
+    "assetPattern": "SarasaMonoSC-TTF-{version}.zip"
+  },
+  "files": [
+    { "filename": "SarasaMonoSC-ExtraLight.woff2", "weight": 200, "style": "normal", "displayName": "ExtraLight" },
+    { "filename": "SarasaMonoSC-ExtraLightItalic.woff2", "weight": 200, "style": "italic", "displayName": "ExtraLight Italic" },
+    { "filename": "SarasaMonoSC-Light.woff2", "weight": 300, "style": "normal", "displayName": "Light" },
+    { "filename": "SarasaMonoSC-LightItalic.woff2", "weight": 300, "style": "italic", "displayName": "Light Italic" },
+    { "filename": "SarasaMonoSC-Regular.woff2", "weight": 400, "style": "normal", "displayName": "Regular" },
+    { "filename": "SarasaMonoSC-Italic.woff2", "weight": 400, "style": "italic", "displayName": "Italic" },
+    { "filename": "SarasaMonoSC-Bold.woff2", "weight": 700, "style": "normal", "displayName": "Bold" },
+    { "filename": "SarasaMonoSC-BoldItalic.woff2", "weight": 700, "style": "italic", "displayName": "Bold Italic" },
+    { "filename": "SarasaMonoSC-SemiBold.woff2", "weight": 600, "style": "normal", "displayName": "SemiBold" },
+    { "filename": "SarasaMonoSC-SemiBoldItalic.woff2", "weight": 600, "style": "italic", "displayName": "SemiBold Italic" }
+  ],
+  "subsets": ["latin", "latin-ext", "cyrillic", "hanzi-simplified"],
+  "added": "2026-06-23",
+  "maintainer": "scillidan"
+}
