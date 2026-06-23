@@ -1,0 +1,40 @@
+name: Deprecate
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'fonts/deprecated/**'
+
+permissions:
+  contents: write
+
+jobs:
+  deprecate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get deprecated fonts
+        id: deprecated
+        run: |
+          fonts=$(ls fonts/deprecated/ 2>/dev/null | tr '\n' ' ' || true)
+          echo "fonts=$fonts" >> $GITHUB_OUTPUT
+      
+      - name: Remove releases
+        if: steps.deprecated.outputs.fonts != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for font in ${{ steps.deprecated.outputs.fonts }}; do
+            echo "Deprecating: $font"
+            tags=$(git tag -l "${font}@*")
+            for tag in $tags; do
+              echo "Deleting release: $tag"
+              gh release delete "$tag" --yes || true
+              git tag -d "$tag" || true
+            done
+          done
