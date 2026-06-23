@@ -29,17 +29,14 @@ bsdtar -xf "$ARCHIVE_FILE" -C "$TEMP_DIR/extracted" 2>/dev/null || \
 { echo "Error: Need 7z or bsdtar to extract .7z files"; exit 1; }
 
 echo "Converting to woff2..."
-mkdir -p "$TEMP_DIR/woff2"
 for ttf in "$TEMP_DIR/extracted"/*.ttf; do
     filename=$(basename "$ttf" .ttf)
     woff2_compress "$ttf" 2>/dev/null || \
-    npx woff2 --compress "$ttf" 2>/dev/null || \
-    python3 -c "from fontTools.ttLib import TTFont; TTFont('$ttf').save('$TEMP_DIR/woff2/$filename.woff2', reorderTables=False)" 2>/dev/null || \
-    { echo "Error: No woff2 converter available. Install woff2, or fonttools."; exit 1; }
+    { echo "Error: No woff2 converter available. Install woff2."; exit 1; }
 done
 
 echo "Moving to font directory..."
-mv "$TEMP_DIR/woff2"/*.woff2 "$SCRIPT_DIR/"
+mv "$TEMP_DIR/extracted"/*.woff2 "$SCRIPT_DIR/"
 
 echo "Done: $(ls "$SCRIPT_DIR"/*.woff2 2>/dev/null | wc -l) woff2 files"
 
