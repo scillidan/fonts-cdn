@@ -24,8 +24,18 @@ jobs:
           node-version: '20'
           cache: 'npm'
       
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y woff2 p7zip-full
+      
       - name: Install dependencies
         run: npm ci
+      
+      - name: Fetch fonts
+        run: |
+          chmod +x scripts/*.sh fonts/*/fetch.sh 2>/dev/null || true
+          ./scripts/fetch-all.sh
       
       - name: Build
         run: npm run build
