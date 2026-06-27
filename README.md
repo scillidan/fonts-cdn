@@ -23,7 +23,7 @@ Self-hosted webfont CDN via GitHub + jsDelivr. Ideal for CJK and niche fonts.
 
 1. **Use this template** → Create new repository
 2. **Clone** your repo
-3. **Add font** → `fonts/active/my-font/font.json`
+3. **Add font** → `fonts/my-font/font.json`
 4. **Push** → Auto-builds and releases
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
@@ -38,7 +38,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 ## Structure
 
 ```
-fonts/active/{font-id}/
+fonts/{font-id}/
 ├── font.json    # Metadata
 ├── fetch.sh     # Download script (optional)
 └── *.woff2      # Font files (fetched, not committed)

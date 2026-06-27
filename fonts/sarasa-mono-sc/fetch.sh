@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# fonts/active/sarasa-mono-sc/fetch.sh
+# fonts/sarasa-mono-sc/fetch.sh
 # Download Sarasa Mono SC from upstream GitHub releases
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

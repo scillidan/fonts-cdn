@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../font.schema.json",
+  "$schema": "../../font.schema.json",
   "id": "sarasa-mono-sc",
   "name": "Sarasa Mono SC",
   "nameLocal": "更纱等距黑体 SC",

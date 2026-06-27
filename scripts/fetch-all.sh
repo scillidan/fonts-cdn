@@ -7,7 +7,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
-FONTS_DIR="$ROOT_DIR/fonts/active"
+FONTS_DIR="$ROOT_DIR/fonts"
 
 DRY_RUN=false
 SPECIFIC_FONTS=()
@@ -15,42 +15,38 @@ SPECIFIC_FONTS=()
 while [[ $# -gt 0 ]]; do
     case $1 in
         --dry-run) DRY_RUN=true; shift ;;
-        *) SPECIFIC_FONDS+=("$1"); shift ;;
+        *) SPECIFIC_FONTS+=("$1"); shift ;;
     esac
 done
 
-# Function to fetch a font
 fetch_font() {
     local font_dir="$1"
     local font_id=$(basename "$font_dir")
     local font_json="$font_dir/font.json"
     local fetch_script="$font_dir/fetch.sh"
-    
+
     if [ ! -f "$font_json" ]; then
         echo "[$font_id] Skip: no font.json"
         return 0
     fi
-    
-    # Check if fetch script exists
+
     if [ ! -f "$fetch_script" ]; then
         echo "[$font_id] Skip: no fetch.sh"
         return 0
     fi
-    
-    # Get current version from font.json
+
     local current_version=""
     if command -v jq &>/dev/null; then
         current_version=$(jq -r '.version' "$font_json" 2>/dev/null || echo "")
     fi
-    
+
     echo "[$font_id] Fetching... (current: ${current_version:-unknown})"
-    
+
     if [ "$DRY_RUN" = true ]; then
         echo "[$font_id] DRY RUN: would execute $fetch_script"
         return 0
     fi
-    
-    # Execute fetch script
+
     cd "$font_dir"
     if bash fetch.sh; then
         echo "[$font_id] ✓ Fetched successfully"
@@ -60,7 +56,6 @@ fetch_font() {
     cd "$ROOT_DIR"
 }
 
-# Main
 echo "=== Fetching fonts ==="
 echo ""
 

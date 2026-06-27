@@ -5,10 +5,11 @@ dist/
 Thumbs.db
 
 # Font files - fetched via scripts, not committed
-fonts/active/**/*.woff2
-fonts/active/**/*.woff
-fonts/active/**/*.ttf
-fonts/active/**/*.7z
-fonts/active/**/*.zip
-fonts/deprecated/**/*
+fonts/**/*.woff2
+fonts/**/*.woff
+fonts/**/*.ttf
+fonts/**/*.7z
+fonts/**/*.zip
 !fonts/**/*.gitkeep
+!fonts/**/font.json
+!fonts/**/fetch.sh

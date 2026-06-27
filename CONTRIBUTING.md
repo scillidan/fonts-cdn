@@ -5,7 +5,7 @@
 ### 1. Create directory
 
 ```bash
-mkdir fonts/active/my-font
+mkdir fonts/my-font
 ```
 
 ### 2. Add font.json
@@ -15,7 +15,7 @@ See [docs/font-schema.md](docs/font-schema.md) for full schema.
 Minimal example:
 ```json
 {
-  "$schema": "../../../font.schema.json",
+  "$schema": "../../font.schema.json",
   "id": "my-font",
   "name": "My Font",
   "version": "1.0.0",
@@ -64,8 +64,8 @@ fi
 ### 4. Test locally
 
 ```bash
-chmod +x fonts/active/my-font/fetch.sh
-./fonts/active/my-font/fetch.sh
+chmod +x fonts/my-font/fetch.sh
+./fonts/my-font/fetch.sh
 npm run validate
 npm run build
 npm run dev  # Open http://localhost:3000/dist/
@@ -74,7 +74,7 @@ npm run dev  # Open http://localhost:3000/dist/
 ### 5. Push
 
 ```bash
-git add fonts/active/my-font
+git add fonts/my-font
 git commit -m "feat: add my-font"
 git push
 ```
@@ -87,7 +87,7 @@ GitHub Actions will:
 
 ### Manual
 ```bash
-./fonts/active/my-font/fetch.sh 1.2.0
+./fonts/my-font/fetch.sh 1.2.0
 npm run validate && npm run build
 git add . && git commit -m "chore: update my-font to 1.2.0"
 git push
@@ -101,11 +101,7 @@ gh workflow run update.yml -f fonts="my-font"
 
 ## Deprecating a Font
 
-```bash
-mv fonts/active/my-font fonts/deprecated/
-```
-
-Update font.json:
+Update `fonts/my-font/font.json`:
 ```json
 {
   ...
@@ -117,12 +113,12 @@ Update font.json:
 ```
 
 ```bash
-git add fonts/deprecated/my-font
+git add fonts/my-font/font.json
 git commit -m "feat: deprecate my-font"
 git push
 ```
 
-The release will be removed automatically.
+Then run the **Deprecate Font** workflow (Actions → Deprecate Font → Run workflow) with the font ID to clean up releases.
 
 ## Allowed Licenses
 
