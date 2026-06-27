@@ -5,6 +5,21 @@ on:
     branches: [main, master]
     paths:
       - 'fonts/active/**'
+  workflow_dispatch:
+    inputs:
+      font:
+        description: 'Font ID (e.g. sarasa-mono-sc)'
+        required: true
+        type: string
+      version:
+        description: 'Version (leave empty to use font.json version)'
+        required: false
+        type: string
+      dry_run:
+        description: 'Dry run (fetch + build only, no release)'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -43,18 +58,26 @@ jobs:
       - name: Get changed fonts
         id: changed
         run: |
-          changed=$(git diff --name-only HEAD~1 HEAD | grep 'fonts/active/' | cut -d'/' -f3 | sort -u | tr '\n' ' ' || true)
-          echo "fonts=$changed" >> $GITHUB_OUTPUT
-      
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "fonts=${{ inputs.font }}" >> $GITHUB_OUTPUT
+          else
+            changed=$(git diff --name-only HEAD~1 HEAD | grep 'fonts/active/' | cut -d'/' -f3 | sort -u | tr '\n' ' ' || true)
+            echo "fonts=$changed" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create releases
-        if: steps.changed.outputs.fonts != ''
+        if: steps.changed.outputs.fonts != '' && inputs.dry_run != true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           for font in ${{ steps.changed.outputs.fonts }}; do
-            version=$(node -e "console.log(require('./fonts/active/$font/font.json').version)")
+            if [ -n "${{ inputs.version }}" ]; then
+              version="${{ inputs.version }}"
+            else
+              version=$(node -e "console.log(require('./fonts/active/$font/font.json').version)")
+            fi
             tag="${font}@${version}"
-            
+
             if ! git tag -l | grep -q "^$tag$"; then
               echo "Creating release: $tag"
               cd fonts/active/$font
