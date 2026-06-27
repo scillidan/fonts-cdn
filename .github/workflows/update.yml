@@ -34,16 +34,24 @@ jobs:
       - name: Make scripts executable
         run: chmod +x scripts/*.sh fonts/*/fetch.sh 2>/dev/null || true
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore woff2 cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: fonts/**/*.woff2
+          key: woff2-${{ runner.os }}-${{ hashFiles('fonts/**/font.json') }}
+
       - name: Fetch fonts
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           if [ -n "${{ inputs.fonts }}" ]; then
             ./scripts/fetch-all.sh ${{ inputs.fonts }}
           else
             ./scripts/fetch-all.sh
           fi
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Validate
         run: npm run validate
