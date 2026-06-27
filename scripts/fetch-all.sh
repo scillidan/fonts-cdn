@@ -55,8 +55,7 @@ fetch_font() {
     if bash fetch.sh; then
         echo "[$font_id] ✓ Fetched successfully"
     else
-        echo "[$font_id] ✗ Fetch failed"
-        return 1
+        echo "[$font_id] ✗ Fetch failed (continuing)"
     fi
     cd "$ROOT_DIR"
 }

@@ -58,6 +58,11 @@ jobs:
             if ! git tag -l | grep -q "^$tag$"; then
               echo "Creating release: $tag"
               cd fonts/active/$font
+              if ! ls *.woff2 >/dev/null 2>&1; then
+                echo "::warning::No woff2 files found for $font, skipping release"
+                cd ../../..
+                continue
+              fi
               zip -r ../../../${font}.zip *.woff2
               cd ../../..
               mv dist/css/${font}.css ${font}.css
