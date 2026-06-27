@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, master]
     paths:
-      - 'fonts/active/**'
+      - 'fonts/**'
   workflow_dispatch:
     inputs:
       font:
@@ -27,41 +27,41 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install tools
         run: |
           sudo apt-get update
           sudo apt-get install -y woff2 p7zip-full
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Fetch fonts
         run: |
           chmod +x scripts/*.sh fonts/*/fetch.sh 2>/dev/null || true
           ./scripts/fetch-all.sh
-      
+
       - name: Build
         run: npm run build
-      
+
       - name: Get changed fonts
         id: changed
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "fonts=${{ inputs.font }}" >> $GITHUB_OUTPUT
           else
-            changed=$(git diff --name-only HEAD~1 HEAD | grep 'fonts/active/' | cut -d'/' -f3 | sort -u | tr '\n' ' ' || true)
+            changed=$(git diff --name-only HEAD~1 HEAD | grep '^fonts/' | grep -v 'fonts/.*\.woff2$' | cut -d'/' -f2 | sort -u | tr '\n' ' ' || true)
             echo "fonts=$changed" >> $GITHUB_OUTPUT
           fi
 
@@ -74,20 +74,30 @@ jobs:
             if [ -n "${{ inputs.version }}" ]; then
               version="${{ inputs.version }}"
             else
-              version=$(node -e "console.log(require('./fonts/active/$font/font.json').version)")
+              version=$(node -e "console.log(require('./fonts/$font/font.json').version)")
             fi
             tag="${font}@${version}"
 
             if ! git tag -l | grep -q "^$tag$"; then
               echo "Creating release: $tag"
-              cd fonts/active/$font
+
+              cd fonts/$font
               if ! ls *.woff2 >/dev/null 2>&1; then
                 echo "::warning::No woff2 files found for $font, skipping release"
-                cd ../../..
+                cd ../..
                 continue
               fi
+
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              git checkout -b "release-${tag}"
+              git add -f dist/ fonts/${font}/*.woff2
+              git commit -m "release: ${tag}" || echo "Nothing to commit"
+              git tag -f "$tag"
+              git push origin "$tag" --force
+
               zip -r ../../../${font}.zip *.woff2
-              cd ../../..
+              cd ../..
               mv dist/css/${font}.css ${font}.css
               zip -u ${font}.zip ${font}.css
               gh release create "$tag" ${font}.zip \

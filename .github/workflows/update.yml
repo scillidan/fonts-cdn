@@ -2,7 +2,6 @@ name: Update Fonts
 
 on:
   schedule:
-    # Run weekly on Monday at 00:00 UTC
     - cron: '0 0 * * 1'
   workflow_dispatch:
     inputs:
@@ -18,26 +17,23 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      
+      - uses: actions/checkout@v6
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      
+
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y woff2 jq
-          npm install -g woff2
-      
+          sudo apt-get install -y woff2 p7zip-full jq
+
       - name: Make scripts executable
         run: chmod +x scripts/*.sh fonts/*/fetch.sh 2>/dev/null || true
-      
+
       - name: Fetch fonts
         run: |
           if [ -n "${{ inputs.fonts }}" ]; then
@@ -45,15 +41,16 @@ jobs:
           else
             ./scripts/fetch-all.sh
           fi
-      
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Validate
-        run: |
-          npm ci
-          npm run validate
-      
+        run: npm run validate
+
       - name: Build
         run: npm run build
-      
+
       - name: Check for changes
         id: changes
         run: |
@@ -61,9 +58,9 @@ jobs:
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "fonts=$(git diff --name-only | grep 'fonts/active/' | cut -d'/' -f3 | sort -u | tr '\n' ' ')" >> $GITHUB_OUTPUT
+            echo "fonts=$(git diff --name-only | grep '^fonts/' | grep -v 'fonts/.*\.woff2$' | cut -d'/' -f2 | sort -u | tr '\n' ' ')" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Create Pull Request
         if: steps.changes.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v6
@@ -73,9 +70,9 @@ jobs:
           title: "chore: update fonts ${{ steps.changes.outputs.fonts }}"
           body: |
             Automated font update.
-            
+
             Updated fonts: ${{ steps.changes.outputs.fonts }}
-            
+
             Please review the changes and merge if appropriate.
           branch: auto/update-fonts
           delete-branch: true
