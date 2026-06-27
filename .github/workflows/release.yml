@@ -81,21 +81,23 @@ jobs:
             if ! git tag -l | grep -q "^$tag$"; then
               echo "Creating release: $tag"
 
-              cd fonts/$font
-              if ! ls *.woff2 >/dev/null 2>&1; then
+              if ! ls fonts/$font/*.woff2 >/dev/null 2>&1; then
                 echo "::warning::No woff2 files found for $font, skipping release"
-                cd ../..
                 continue
               fi
 
               git config user.name "github-actions[bot]"
               git config user.email "github-actions[bot]@users.noreply.github.com"
+              git add -f dist/ fonts/${font}/*.woff2
+              git stash
               git checkout -b "release-${tag}"
+              git stash pop
               git add -f dist/ fonts/${font}/*.woff2
               git commit -m "release: ${tag}" || echo "Nothing to commit"
               git tag -f "$tag"
               git push origin "$tag" --force
 
+              cd fonts/$font
               zip -r ../../../${font}.zip *.woff2
               cd ../..
               mv dist/css/${font}.css ${font}.css
