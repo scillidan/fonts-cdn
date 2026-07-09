@@ -1,0 +1,215 @@
+name: CDN
+
+on:
+  workflow_dispatch:
+    inputs:
+      font:
+        description: 'Font ID (e.g. sarasa-mono-sc)'
+        required: true
+        type: string
+      version:
+        description: 'Version (leave empty to read from scoop manifest)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cdn
+  cancel-in-progress: false
+
+jobs:
+  cdn:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v6
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1
+        with:
+          path: ~\scoop\apps
+          key: scoop-${{ hashFiles('fonts/*/*.json') }}
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: pip-fonttools
+
+      - name: Install Scoop
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+          Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+          echo "$env:USERPROFILE\scoop\shims" >> $env:GITHUB_PATH
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install fonttools
+        run: pip install fonttools -q
+
+      - name: Determine fonts to release
+        id: fonts
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            echo "list=${{ inputs.font }}" >> $env:GITHUB_OUTPUT
+          } else {
+            $changed = (git diff --name-only HEAD~1 HEAD | Select-String '^fonts/' | Select-String '\.json$' | Select-String -NotMatch '\.meta\.json$' | ForEach-Object { ($_ -split '/')[1] } | Sort-Object -Unique) -join ' '
+            echo "list=$changed" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Install fonts via Scoop
+        if: steps.fonts.outputs.list != ''
+        shell: pwsh
+        run: |
+          $fonts = "${{ steps.fonts.outputs.list }}" -split ' '
+          foreach ($font in $fonts) {
+            if (-not $font) { continue }
+            $manifests = Get-ChildItem "fonts\$font\*.json" | Where-Object { $_.Name -notlike '*.meta.json' }
+            if (-not $manifests) {
+              Write-Host "::warning::No scoop manifest found for $font, skipping"
+              continue
+            }
+            foreach ($manifest in $manifests) {
+              Write-Host "Installing from $($manifest.FullName)..."
+              scoop install $manifest.FullName *>&1 | Out-Null
+            }
+          }
+
+      - name: Copy ttf and license from scoop
+        if: steps.fonts.outputs.list != ''
+        shell: pwsh
+        run: |
+          $fonts = "${{ steps.fonts.outputs.list }}" -split ' '
+          foreach ($font in $fonts) {
+            if (-not $font) { continue }
+            $manifests = Get-ChildItem "fonts\$font\*.json" | Where-Object { $_.Name -notlike '*.meta.json' }
+            if (-not $manifests) { continue }
+            foreach ($manifest in $manifests) {
+              $name = $manifest.BaseName
+              $scoopDir = "$env:USERPROFILE\scoop\apps\$name\current"
+              if (-not (Test-Path $scoopDir)) {
+                Write-Host "::warning::Scoop dir not found for $manifest ($scoopDir)"
+                continue
+              }
+              Get-ChildItem $scoopDir -Filter *.ttf | Copy-Item -Destination "fonts\$font\"
+              Get-ChildItem $scoopDir | Where-Object { $_.Name -like 'LICENSE*' -or $_.Name -like 'OFL*' } | Copy-Item -Destination "fonts\$font\" -ErrorAction SilentlyContinue
+              Get-ChildItem $scoopDir -Filter *.sfd | Copy-Item -Destination "fonts\$font\" -ErrorAction SilentlyContinue
+            }
+          }
+
+      - name: Check license
+        if: steps.fonts.outputs.list != ''
+        shell: pwsh
+        run: |
+          $fonts = "${{ steps.fonts.outputs.list }}" -split ' '
+          foreach ($font in $fonts) {
+            if (-not $font) { continue }
+            $hasLicense = Get-ChildItem "fonts\$font\LICENSE*", "fonts\$font\OFL*" -ErrorAction SilentlyContinue
+            if (-not $hasLicense) {
+              Write-Error "No license file found in fonts/$font/"
+              exit 1
+            }
+            Write-Host "✓ $font : license found"
+          }
+
+      - name: Process ttf and generate meta.json
+        if: steps.fonts.outputs.list != ''
+        run: node scripts/process.mjs ${{ steps.fonts.outputs.list }}
+
+      - name: Build CSS
+        if: steps.fonts.outputs.list != ''
+        run: node scripts/build.mjs ${{ steps.fonts.outputs.list }}
+
+      - name: Commit CSS to main
+        if: steps.fonts.outputs.list != ''
+        shell: pwsh
+        run: |
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add css/ fonts/*/*.meta.json fonts.json
+            if (git diff --cached --quiet) {
+              Write-Host "No changes to commit"
+            } else {
+              git commit -m "chore: update css for ${{ steps.fonts.outputs.list }} [skip ci]"
+              git pull --rebase --autostash
+              git push
+            }
+
+      - name: Create tags with woff2 and css
+        if: steps.fonts.outputs.list != ''
+        shell: pwsh
+        run: |
+          $fonts = "${{ steps.fonts.outputs.list }}" -split ' '
+          foreach ($font in $fonts) {
+            if (-not $font) { continue }
+            $manifest = Get-ChildItem "fonts\$font\*.json" | Where-Object { $_.Name -notlike '*.meta.json' } | Select-Object -First 1
+            if (-not $manifest) { continue }
+
+            $version = if ("${{ inputs.version }}") { "${{ inputs.version }}" } else { (Get-Content $manifest.FullName | ConvertFrom-Json).version }
+            $tag = "$font@$version"
+
+            $existing = git tag -l $tag
+            if ($existing) {
+              Write-Host "Tag $tag already exists, deleting and recreating"
+              git push origin --delete "$tag" 2>$null
+            }
+
+            $woff2Files = Get-ChildItem "fonts\$font\*.woff2" -ErrorAction SilentlyContinue
+            if (-not $woff2Files) {
+              Write-Host "::warning::No woff2 files found for $font, skipping tag"
+              continue
+            }
+
+            Write-Host "Creating orphan commit for $tag..."
+
+            $woff2Paths = $woff2Files | ForEach-Object { "fonts/$font/$($_.Name)" }
+            $licensePaths = Get-ChildItem "fonts\$font\LICENSE*", "fonts\$font\OFL*" -ErrorAction SilentlyContinue | ForEach-Object { "fonts/$font/$($_.Name)" }
+            $sourcePaths = Get-ChildItem "fonts\$font\*.sfd" -ErrorAction SilentlyContinue | ForEach-Object { "fonts/$font/$($_.Name)" }
+
+            $metaFiles = Get-ChildItem "fonts\$font\*.meta.json" -ErrorAction SilentlyContinue
+            $cssMainPaths = @()
+            $cssSubPaths = @()
+            foreach ($metaFile in $metaFiles) {
+              $cssId = $metaFile.Name -replace '\.meta\.json$', ''
+              $cssMain = "css/$cssId.css"
+              if (Test-Path $cssMain) { $cssMainPaths += $cssMain }
+              $cssSub = Get-ChildItem "css\$cssId\*.css" -ErrorAction SilentlyContinue | ForEach-Object { "css/$cssId/$($_.Name)" }
+              if ($cssSub) { $cssSubPaths += $cssSub }
+            }
+
+            $allFiles = @($woff2Paths) + @($licensePaths) + @($sourcePaths) + @($cssMainPaths) + @($cssSubPaths)
+
+            Write-Host "Files to include:"
+            foreach ($f in $allFiles) {
+              if (Test-Path $f) {
+                Write-Host "  OK: $f"
+              } else {
+                Write-Host "  MISSING: $f"
+              }
+            }
+
+            $origCommit = git rev-parse HEAD
+            git rm -r --cached . 2>$null
+            foreach ($f in $allFiles) {
+              git add -f $f
+            }
+            git commit -m "release: $tag"
+            $commitHash = git rev-parse HEAD
+            git tag -f $tag $commitHash
+            git push origin $tag --force
+            git reset --soft $origCommit
+            git reset HEAD -- .
+            Write-Host "Tag $tag created and pushed"
+          }
+

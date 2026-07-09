@@ -1,0 +1,65 @@
+name: Check Updates
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v6
+
+      - name: Install Scoop
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+          Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+
+      - name: Check for updates
+        shell: pwsh
+        run: |
+          Get-ChildItem fonts\*\*.json | Where-Object { $_.Name -notlike '*.meta.json' } | ForEach-Object {
+            $manifest = Get-Content $_.FullName | ConvertFrom-Json
+            $localVersion = $manifest.version
+            $name = $_.BaseName
+            $fontDir = $_.Directory.Name
+
+            $checkver = $manifest.checkver
+            $autoupdate = $manifest.autoupdate
+            if (-not $checkver -and -not $autoupdate) {
+              Write-Host "No checkver/autoupdate for $name, skipping"
+              continue
+            }
+
+            Write-Host "Checking $name (local: $localVersion)..."
+            scoop install $_.FullName *>&1 | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "::warning::Failed to install $name, skipping"
+              continue
+            }
+
+            $remoteVersion = scoop info $name 2>&1 | Select-String 'Version:' | ForEach-Object { ($_ -split '\s+')[-1] } | Select-Object -First 1
+            if (-not $remoteVersion) {
+              Write-Host "::warning::Could not determine remote version for $name"
+              continue
+            }
+            Write-Host "Remote version: $remoteVersion"
+
+            if ($remoteVersion -ne $localVersion) {
+              $title = "[Features] $fontDir : update version to $remoteVersion"
+              Write-Host "Update available: $title"
+
+              $existing = gh issue list --search "$title" --json number --jq 'length'
+              if ($existing -eq 0) {
+                gh issue create --title "$title" --body "New version $remoteVersion available for $fontDir (current: $localVersion)."
+              } else {
+                Write-Host "Issue already exists, skipping"
+              }
+            }
+          }

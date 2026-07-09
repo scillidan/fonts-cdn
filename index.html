@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Replace with your own CDN URL -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/scillidan/fonts@main/css/sarasa-mono-sc.css">
+  <style>
+    p { padding-left: 12px; margin-bottom: 6px; }
+    table { margin-bottom: 24px; }
+    table th, table td { text-align: left; padding: 2px 12px; }
+  </style>
+</head>
+<body>
+  <p>Source: <a href="https://github.com/be5invis/Sarasa-Gothic">be5invis/Sarasa-Gothic</a> &middot; License: <a href="https://github.com/be5invis/Sarasa-Gothic/blob/main/LICENSE">OFL-1.1</a> &middot; Version: <a data-font="sarasa-mono-sc"></a></p>
+  <table>
+    <tr>
+      <th>font-family</th>
+      <th>font-weight</th>
+      <th>font-style</th>
+    </tr>
+    <tr style="font-family:'Sarasa Mono SC';font-weight:200;font-style:normal">
+      <td>更纱等距黑体 SC</td>
+      <td>200 (ExtraLight)</td>
+      <td>Normal</td>
+    </tr>
+    <tr style="font-family:'Sarasa Mono SC';font-weight:300;font-style:normal">
+      <td>更纱等距黑体 SC</td>
+      <td>300 (Light)</td>
+      <td>Normal</td>
+    </tr>
+    <tr style="font-family:'Sarasa Mono SC';font-weight:400;font-style:normal">
+      <td>更纱等距黑体 SC</td>
+      <td>400 (Regular)</td>
+      <td>Normal</td>
+    </tr>
+    <tr style="font-family:'Sarasa Mono SC';font-weight:600;font-style:normal">
+      <td>更纱等距黑体 SC</td>
+      <td>600 (SemiBold)</td>
+      <td>Normal</td>
+    </tr>
+    <tr style="font-family:'Sarasa Mono SC';font-weight:700;font-style:normal">
+      <td>更纱等距黑体 SC</td>
+      <td>700 (Bold)</td>
+      <td>Normal</td>
+    </tr>
+    <tr style="font-family:'Sarasa Mono SC';font-weight:200;font-style:italic">
+      <td>更纱等距黑体 SC</td>
+      <td>200 (ExtraLight Italic)</td>
+      <td>Italic</td>
+    </tr>
+    <tr style="font-family:'Sarasa Mono SC';font-weight:300;font-style:italic">
+      <td>更纱等距黑体 SC</td>
+      <td>300 (Light Italic)</td>
+      <td>Italic</td>
+    </tr>
+    <tr style="font-family:'Sarasa Mono SC';font-weight:400;font-style:italic">
+      <td>更纱等距黑体 SC</td>
+      <td>400 (Italic)</td>
+      <td>Italic</td>
+    </tr>
+    <tr style="font-family:'Sarasa Mono SC';font-weight:600;font-style:italic">
+      <td>更纱等距黑体 SC</td>
+      <td>600 (SemiBold Italic)</td>
+      <td>Italic</td>
+    </tr>
+    <tr style="font-family:'Sarasa Mono SC';font-weight:700;font-style:italic">
+      <td>更纱等距黑体 SC</td>
+      <td>700 (Bold Italic)</td>
+      <td>Italic</td>
+    </tr>
+  </table>
+
+  <script>
+fetch('fonts.json').then(r => r.json()).then(fonts => {
+  const byCssId = Object.fromEntries(fonts.map(f => [f.cssId, f]));
+  document.querySelectorAll('a[data-font]').forEach(el => {
+    const f = byCssId[el.dataset.font];
+    if (!f) return;
+    const v = f.version;
+    const tag = v.startsWith('v') ? v : 'v' + v;
+    const href = f.homepage && f.homepage.includes('github.com') ? f.homepage + '/tag/' + tag : null;
+    el.textContent = v;
+    if (href) el.href = href;
+  });
+});
+  </script>
+</body>
+</html>

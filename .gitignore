@@ -1,0 +1,16 @@
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+
+# Font files - fetched via scripts, not committed
+fonts/**/*.woff2
+fonts/**/*.woff
+fonts/**/*.ttf
+fonts/**/*.7z
+fonts/**/*.zip
+!fonts/**/*.gitkeep
+!fonts/**/meta.patch.json
+!fonts/**/fetch.sh
+!fonts/**/LICENSE
+!fonts/**/*.sfd

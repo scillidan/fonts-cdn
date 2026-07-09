@@ -1,0 +1,38 @@
+name: Deprecate Font
+
+on:
+  workflow_dispatch:
+    inputs:
+      font:
+        description: 'Font ID to deprecate (e.g. sarasa-mono-sc)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  deprecate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v6
+        with:
+          fetch-depth: 0
+
+      - name: Remove tags
+        run: |
+          font="${{ inputs.font }}"
+          echo "Deprecating: $font"
+
+          tags=$(git tag -l "${font}@*")
+          if [ -z "$tags" ]; then
+            echo "No releases found for $font"
+          else
+            for tag in $tags; do
+              echo "Deleting tag: $tag"
+              git push origin --delete "$tag" || true
+            done
+          fi
+
+          echo "Done. Remember to set \"deprecated\": true in fonts/$font/*.meta.json"
