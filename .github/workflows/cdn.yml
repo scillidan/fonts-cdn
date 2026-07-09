@@ -86,7 +86,7 @@ jobs:
             }
           }
 
-      - name: Copy ttf and license from scoop
+      - name: Copy font files and license from scoop
         if: steps.fonts.outputs.list != ''
         shell: pwsh
         run: |
@@ -103,6 +103,7 @@ jobs:
                 continue
               }
               Get-ChildItem $scoopDir -Filter *.ttf | Copy-Item -Destination "fonts\$font\"
+              Get-ChildItem $scoopDir -Filter *.otf | Copy-Item -Destination "fonts\$font\"
               Get-ChildItem $scoopDir | Where-Object { $_.Name -like 'LICENSE*' -or $_.Name -like 'OFL*' } | Copy-Item -Destination "fonts\$font\" -ErrorAction SilentlyContinue
               Get-ChildItem $scoopDir -Filter *.sfd | Copy-Item -Destination "fonts\$font\" -ErrorAction SilentlyContinue
             }
@@ -123,7 +124,7 @@ jobs:
             Write-Host "✓ $font : license found"
           }
 
-      - name: Process ttf and generate meta.json
+      - name: Process font files and generate meta.json
         if: steps.fonts.outputs.list != ''
         run: node scripts/process.mjs ${{ steps.fonts.outputs.list }}
 
