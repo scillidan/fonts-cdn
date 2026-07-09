@@ -22,6 +22,8 @@ For example:
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/scillidan/fonts@sarasa-mono-sc@1.0.40/css/sarasa-mono-sc/sarasa-mono-sc.css">
 ```
 
+See more on [scillidan/fonts](https://github.com/scillidan/fonts).
+
 ## Start
 
 1. **Use this template**
