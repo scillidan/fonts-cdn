@@ -37,6 +37,11 @@ See more on [scillidan/fonts](https://github.com/scillidan/fonts).
 	- Visit the Github Pages website
 	- If you add new fonts, you need to modify `index.html`
 
+## Related projects
+
+- [Fontsource](https://github.com/fontsource/fontsource)
+- [xz/fonts](https://github.com/xz/fonts)
+
 ## Attribute
 
 Each font has its own license. Others is under `MIT`.
