@@ -45,24 +45,24 @@ function readTtfInfo(ttfPath) {
   };
 }
 
-function normalizeTtfName(fontId, fullName, usedNames) {
+function normalizeFontName(fontId, fullName, srcExt, usedNames) {
   const slug = fullName.toLowerCase().replace(/\s+/g, '-');
-  let name = slug + '.woff2';
-  if (usedNames.has(name)) {
+  let woff2Name = slug + '.woff2';
+  if (usedNames.has(woff2Name)) {
     let idx = 2;
     while (usedNames.has(slug + `-${idx}.woff2`)) idx++;
-    name = slug + `-${idx}.woff2`;
+    woff2Name = slug + `-${idx}.woff2`;
   }
-  usedNames.add(name);
-  const ttfName = name.replace('.woff2', '.ttf');
-  return { ttfName, woff2Name: name };
+  usedNames.add(woff2Name);
+  const srcName = woff2Name.replace('.woff2', '.' + srcExt);
+  return { srcName, woff2Name };
 }
 
 function processFont(fontDir) {
-  const ttfFiles = readdirSync(fontDir).filter(f => f.endsWith('.ttf') && !f.startsWith('.'));
+  const fontFiles = readdirSync(fontDir).filter(f => (f.endsWith('.ttf') || f.endsWith('.otf')) && !f.startsWith('.'));
 
-  if (ttfFiles.length === 0) {
-    console.log(`  No ttf files found`);
+  if (fontFiles.length === 0) {
+    console.log(`  No ttf/otf files found`);
     return;
   }
 
@@ -71,30 +71,31 @@ function processFont(fontDir) {
   const allFaces = [];
 
   console.log(`  fonttools detected:`);
-  for (const ttfFile of ttfFiles) {
-    const info = readTtfInfo(join(fontDir, ttfFile));
-    const names = normalizeTtfName(fontId, info.fullName, usedNames);
-    console.log(`    ${ttfFile} -> ${names.woff2Name} (fullName=${info.fullName}, family=${info.family}, subfamily=${info.subfamily}, weight=${info.weightStr}, fontStyle=${info.fontStyle})`);
-    allFaces.push({ ttfFile, newName: names.ttfName, woff2Name: names.woff2Name, ...info });
+  for (const srcFile of fontFiles) {
+    const srcExt = srcFile.endsWith('.otf') ? 'otf' : 'ttf';
+    const info = readTtfInfo(join(fontDir, srcFile));
+    const names = normalizeFontName(fontId, info.fullName, srcExt, usedNames);
+    console.log(`    ${srcFile} -> ${names.woff2Name} (fullName=${info.fullName}, family=${info.family}, subfamily=${info.subfamily}, weight=${info.weightStr}, fontStyle=${info.fontStyle})`);
+    allFaces.push({ srcFile, srcExt, newName: names.srcName, woff2Name: names.woff2Name, ...info });
   }
 
   for (const face of allFaces) {
-    const ttfPath = join(fontDir, face.ttfFile);
+    const srcPath = join(fontDir, face.srcFile);
     const newPath = join(fontDir, face.newName);
     const woff2Path = join(fontDir, face.woff2Name);
 
-    const ttfContent = readFileSync(ttfPath);
+    const srcContent = readFileSync(srcPath);
     let woff2Content;
     try {
-      woff2Content = ttf2woff2(ttfContent);
+      woff2Content = ttf2woff2(srcContent);
     } catch (e) {
-      console.error(`  Convert failed for ${face.ttfFile}: ${e.message}`);
+      console.error(`  Convert failed for ${face.srcFile}: ${e.message}`);
       continue;
     }
 
-    if (face.ttfFile !== face.newName) {
-      renameSync(ttfPath, newPath);
-      console.log(`  Renamed: ${face.ttfFile} -> ${face.newName}`);
+    if (face.srcFile !== face.newName) {
+      renameSync(srcPath, newPath);
+      console.log(`  Renamed: ${face.srcFile} -> ${face.newName}`);
     }
 
     writeFileSync(woff2Path, woff2Content);

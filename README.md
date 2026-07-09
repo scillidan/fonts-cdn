@@ -30,7 +30,7 @@ See more on [scillidan/fonts](https://github.com/scillidan/fonts).
 2. **Clone** your repo to local
 3. **Add font** → `fonts/{font-id}/{Font-Name}.json`
 	- Fetch and verify font files using [Scoop's app manifest](https://github.com/ScoopInstaller/Scoop/wiki/App-Manifests)
-	- The `.ttf` files and the font licenses are required
+	- The `.ttf` or `.otf` files and the font licenses are required
 4. **Push**
 5. **Build** → Actions → Release → Run workflow → `{font-id}`
 6. **Preview** → Your repo → Settings → Pages → Source → `GitHub Actions`
